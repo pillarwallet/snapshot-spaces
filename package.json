@@ -1,7 +1,7 @@
 {
-  "name": "@bonustrack/snapshot-spaces",
+  "name": "@pillarwallet/snapshot-spaces",
   "version": "0.1.0",
-  "repository": "bonustrack/snapshot-spaces",
+  "repository": "pillarwallet/snapshot-spaces",
   "license": "MIT",
   "files": [
     "spaces"
