@@ -1,0 +1,53 @@
+version: 2.1
+
+orbs:
+  slack: circleci/slack@3.4.2
+  discord: antonioned/discord@0.0.4
+
+jobs:
+  publish:
+    working_directory: ~/snapshot-spaces
+    docker:
+      - image: circleci/node:8.9.4
+    steps:
+      - checkout
+      - run:
+          name: Append circleCI build number to version
+          command: |
+            git config user.email "devops@pillar.io"
+            git config user.name "Issabot"
+            npm version $(node -e "const currentVersion=require('./package.json').version; const firstTwoDots=currentVersion.substring(0, currentVersion.lastIndexOf('.')+1); console.log(firstTwoDots);")$CIRCLE_BUILD_NUM
+      - run:
+            name: Authenticate with registry
+            command: echo "//registry.npmjs.org/:_authToken=$PILLAR_NPM_TOKEN" > ~/snapshot-spaces/.npmrc
+      - run:
+          name: Install Packages
+          command: npm i
+      - run:
+          name: Publish Package to npmjs
+          command: npm publish
+      - run:
+          name: Announce Publish
+          command: |
+            chmod +x .circleci/announcePublish.sh
+            chmod +x .circleci/announceDiscord.sh
+            .circleci/announcePublish.sh "Snapshot (Metadata)" "$(node -e "console.log(require('./package.json').name)")@$(node -e "console.log(require('./package.json').version)")"
+            .circleci/announceDiscord.sh "Snapshot (Metadata)" "$(node -e "console.log(require('./package.json').name)")@$(node -e "console.log(require('./package.json').version)")"
+      - slack/status:
+          fail_only: true
+          failure_message: "Triggered by: *${CIRCLE_USERNAME}* \n\n *$CIRCLE_JOB* failed, new package is not published. :circleci-fail:"
+          webhook: "${SLACK_WEBHOOK_URL}"
+      - discord/status:
+          fail_only: true
+          failure_message: "Triggered by: **${CIRCLE_USERNAME}** \\n\\n **$CIRCLE_JOB** failed, new package is not published."
+          webhook: "${DISCORD_WEBHOOK_URL}"
+
+workflows:
+  version: 2.1
+  build_test_and_deploy:
+    jobs:
+      - publish:
+          filters:
+            branches:
+              only:
+                - master
