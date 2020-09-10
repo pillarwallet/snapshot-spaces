@@ -8,6 +8,6 @@
   "core": [
     "0x2Abdb157b2603e17d531d4fc51a4fc6174c3dAEA"
   ],
-  "min": 0,
+  "min": 100,
   "invalid": []
 }
